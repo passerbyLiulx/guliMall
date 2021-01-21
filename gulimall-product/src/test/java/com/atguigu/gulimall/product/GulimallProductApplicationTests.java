@@ -22,4 +22,6 @@ public class GulimallProductApplicationTests {
         brandService.save(brandEntity);
     }
 
+
+
 }
