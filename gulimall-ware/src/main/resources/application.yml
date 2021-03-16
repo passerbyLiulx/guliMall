@@ -17,3 +17,7 @@ mybatis-plus:
       id-type: auto
 server:
   port: 12000
+
+logging:
+  level:
+    com.atguigu: debug

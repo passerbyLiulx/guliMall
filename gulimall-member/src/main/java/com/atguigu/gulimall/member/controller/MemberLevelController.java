@@ -39,6 +39,7 @@ public class MemberLevelController {
         PageUtils page = memberLevelService.queryPage(params);
 
         return R.ok().put("page", page);
+
     }
 
 
