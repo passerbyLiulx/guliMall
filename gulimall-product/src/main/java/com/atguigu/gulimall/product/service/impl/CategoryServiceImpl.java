@@ -1,15 +1,24 @@
 package com.atguigu.gulimall.product.service.impl;
 
+import ch.qos.logback.core.util.TimeUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.atguigu.gulimall.product.entity.AttrGroupEntity;
 import com.atguigu.gulimall.product.service.CategoryBrandRelationService;
 import com.atguigu.gulimall.product.vo.Catelog2Vo;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -21,6 +30,7 @@ import com.atguigu.common.utils.Query;
 import com.atguigu.gulimall.product.dao.CategoryDao;
 import com.atguigu.gulimall.product.entity.CategoryEntity;
 import com.atguigu.gulimall.product.service.CategoryService;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 
@@ -29,6 +39,12 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Autowired
     private CategoryBrandRelationService categoryBrandRelationService;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private RedissonClient redissonClient;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -42,6 +58,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     /**
      * 菜单树
+     *
      * @return
      */
     @Override
@@ -56,7 +73,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             menu.setChildren(getChildren(menu, categoryEntityList));
             return menu;
         }).sorted((menu1, menu2) ->
-            (menu1.getSort() == null ? 0 : menu1.getSort()) - (menu2.getSort() == null ? 0 : menu2.getSort())
+                (menu1.getSort() == null ? 0 : menu1.getSort()) - (menu2.getSort() == null ? 0 : menu2.getSort())
         ).collect(Collectors.toList());
 
         return categoryEntityListWithTree;
@@ -64,6 +81,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     /**
      * 子菜单
+     *
      * @param root
      * @param all
      * @return
@@ -76,7 +94,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             categoryEntity.setChildren(getChildren(categoryEntity, all));
             return categoryEntity;
         }).sorted((menu1, menu2) ->
-            (menu1.getSort() == null ? 0 : menu1.getSort()) - (menu2.getSort() == null ? 0 : menu2.getSort())
+                (menu1.getSort() == null ? 0 : menu1.getSort()) - (menu2.getSort() == null ? 0 : menu2.getSort())
         ).collect(Collectors.toList());
 
         return children;
@@ -99,6 +117,13 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         return paths.toArray(new Long[(paths.size())]);
     }
 
+    //@CacheEvict(value = "category", key = "'getOneLevelCategorys'")
+//    @Caching(evict = {
+//            @CacheEvict(value = "category", key = "'getOneLevelCategorys'"),
+//            @CacheEvict(value = "category", key = "'getOneLevelCategorys'")
+//    })
+    @CacheEvict(value = "category", allEntries = true)
+    @Transactional
     @Override
     public void updateCascade(CategoryEntity category) {
         this.updateById(category);
@@ -107,38 +132,96 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         }
     }
 
+    @Cacheable( value = {"category"}, key = "#root.method.name")
     @Override
     public List<CategoryEntity> getOneLevelCategorys() {
         List<CategoryEntity> categoryEntityList = baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", 0));
+        System.out.println("访问的数据库");
         return categoryEntityList;
     }
 
     @Override
     public Map<String, List<Catelog2Vo>> getCatalogJson() {
-        List<CategoryEntity> oneLevelCategorys = getOneLevelCategorys();
-
-        Map<String, List<Catelog2Vo>> parent_cid = oneLevelCategorys.stream().collect(Collectors.toMap(k -> k.getCatId().toString(), v -> {
-            List<CategoryEntity> categoryEntityList = baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", v.getCatId()));
-            List<Catelog2Vo> catelog2Vos = null;
-            if (categoryEntityList != null) {
-                catelog2Vos = categoryEntityList.stream().map(l2 -> {
-                    Catelog2Vo catelog2Vo = new Catelog2Vo(v.getCatId().toString(), null, l2.getCatId().toString(), l2.getName());
-                    List<CategoryEntity> catelog3Vos = baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", l2.getCatId()));
-                    if (catelog3Vos != null) {
-                        List<Catelog2Vo.Catelog3Vo> collect = catelog3Vos.stream().map(l3 -> {
-                            Catelog2Vo.Catelog3Vo catelog3Vo = new Catelog2Vo.Catelog3Vo(l2.getCatId().toString(), l3.getCatId().toString(), l3.getName());
-                            return catelog3Vo;
-                        }).collect(Collectors.toList());
-                        catelog2Vo.setCatalog3List(collect);
-                    }
-                    return catelog2Vo;
-                }).collect(Collectors.toList());
-            }
-            return catelog2Vos;
-        }));
-
-        return parent_cid;
+        String catalogJSON = stringRedisTemplate.opsForValue().get("catalogJSON");
+        Map<String, List<Catelog2Vo>> catalogJsonFromDb;
+        if (StringUtils.isEmpty(catalogJSON)) {
+            catalogJsonFromDb = getCatalogJsonFromDb();
+        } else {
+            catalogJsonFromDb = JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catelog2Vo>>>() {
+            });
+        }
+        return catalogJsonFromDb;
     }
+
+    public Map<String, List<Catelog2Vo>> getCatalogJsonFromDbWithLocalLock() {
+        // 分布式锁
+        String uuid = UUID.randomUUID().toString();
+        Boolean lock = stringRedisTemplate.opsForValue().setIfAbsent("lock", uuid, 300, TimeUnit.SECONDS);
+        if (lock) {
+            Map<String, List<Catelog2Vo>> dataFromDb = getCatalogJsonFromDb();
+            /*String lockValue = stringRedisTemplate.opsForValue().get("lock");
+            if (uuid.equals(lockValue)) {
+                stringRedisTemplate.delete("lock");
+            }*/
+            // lua脚本解锁
+            String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+
+            Long unLock = stringRedisTemplate.execute(new DefaultRedisScript<Long>(script, Long.class), Arrays.asList("lock"), uuid);
+            return dataFromDb;
+        } else {
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return getCatalogJsonFromDbWithLocalLock();
+        }
+    }
+
+    public Map<String, List<Catelog2Vo>> getCatalogJsonFromDbWithRedissonLock() {
+        RLock lock = redissonClient.getLock("catalogJson-lock");
+        lock.lock();
+        Map<String, List<Catelog2Vo>> dataFromDb;
+        try {
+            dataFromDb = getCatalogJsonFromDb();
+        } finally {
+            lock.unlock();
+        }
+        return dataFromDb;
+    }
+
+    public Map<String, List<Catelog2Vo>> getCatalogJsonFromDb() {
+        synchronized (this) {
+            String catalogJSON = stringRedisTemplate.opsForValue().get("catalogJSON");
+            if (!StringUtils.isEmpty(catalogJSON)) {
+                return JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catelog2Vo>>>() {
+                });
+            }
+            List<CategoryEntity> oneLevelCategorys = getOneLevelCategorys();
+            Map<String, List<Catelog2Vo>> parent_cid = oneLevelCategorys.stream().collect(Collectors.toMap(k -> k.getCatId().toString(), v -> {
+                List<CategoryEntity> categoryEntityList = baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", v.getCatId()));
+                List<Catelog2Vo> catelog2Vos = null;
+                if (categoryEntityList != null) {
+                    catelog2Vos = categoryEntityList.stream().map(l2 -> {
+                        Catelog2Vo catelog2Vo = new Catelog2Vo(v.getCatId().toString(), null, l2.getCatId().toString(), l2.getName());
+                        List<CategoryEntity> catelog3Vos = baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", l2.getCatId()));
+                        if (catelog3Vos != null) {
+                            List<Catelog2Vo.Catelog3Vo> collect = catelog3Vos.stream().map(l3 -> {
+                                Catelog2Vo.Catelog3Vo catelog3Vo = new Catelog2Vo.Catelog3Vo(l2.getCatId().toString(), l3.getCatId().toString(), l3.getName());
+                                return catelog3Vo;
+                            }).collect(Collectors.toList());
+                            catelog2Vo.setCatalog3List(collect);
+                        }
+                        return catelog2Vo;
+                    }).collect(Collectors.toList());
+                }
+                return catelog2Vos;
+            }));
+            stringRedisTemplate.opsForValue().set("catalogJSON", JSON.toJSONString(parent_cid), 1, TimeUnit.DAYS);
+            return parent_cid;
+        }
+    }
+
 
     private List<Long> findParentPath(Long catelogId, List<Long> paths) {
         paths.add(catelogId);
