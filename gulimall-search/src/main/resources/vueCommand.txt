@@ -1,0 +1,119 @@
+vagrant up
+
+vagrant ssh
+
+su root
+vagrant
+
+
+
+拉取：docker pull mysql:5.7
+
+查看镜像：docker images
+
+docker ps -a
+
+容器文件挂载与端口映射：docker run -p 3306:3306 --name mysql \
+-v /mydata/mysql/log:/var/log/mysql \
+-v /mydata/mysql/data:/var/lib/mysql \
+-v /mydata/mysql/conf:/etc/mysql \
+-e MYSQL_ROOT_PASSWORD=root \
+-d mysql:5.7
+
+docker run -p 3306:3306 --name mysql \
+-e MYSQL_ROOT_PASSWORD=root \
+-d mysql:5.7
+
+进入容器：docker exec -it mysql /bin/bash
+
+位置：whhereis mysql
+
+dcoker start mysql
+
+重启：docker restart mysql
+
+修改myslq文件：
+[client]
+default-character-set=utf8
+[mysql]
+default-character-set=utf8
+[mysqld]
+init_connect='SET collation_connection = utf8_unicode_ci'
+init_connect='SET NAMES utf8'
+character-set-server=utf8
+collation-server=utf8_unicode_ci
+skip-character-set-client-handshake
+skip-name-resolve
+
+启动docker：systemctl start docker
+
+systemctl restart docker
+
+systemctl status docker
+
+systemctl stop docker
+
+查找文件：find / -name my.cnf
+
+docker pull redis
+
+mkdir -p /mydata/redis/conf
+
+touch /mydata/redis/conf/redis.conf
+
+docker run -p 6379:6379 --name redis -v /mydata/redis/data:/data \
+-v /mydata/redis/conf/redis.conf:/etc/redis/redis.conf \
+-d redis redis-server /etc/redis/redis.conf
+
+docker exec -it redis rediss-cli
+
+每次总是启动：docker update redis --restart=always
+	docker update mysql --restart=always
+
+
+docker pull elasticsearch:7.4.2  存储和检索数据
+docker pull kibana:7.4.2  可视化检索数据
+
+mkdir -p /mydata/elasticsearch/config
+mkdir -p /mydata/elasticsearch/data
+echo "http.host: 0.0.0.0" >> /mydata/elasticsearch/config/elasticsearch.yml
+
+docker run --name elasticsearch -p 9200:9200 -p 9300:9300 \
+-e "discovery.type=single-node" \
+-e ES_JAVA_OPTS="-Xms64m -Xmx512m" \
+-v /mydata/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml \
+-v /mydata/elasticsearch/data:/usr/share/elasticsearch/data \
+-v /mydata/elasticsearch/plugins:/usr/share/elasticsearch/plugins \
+-d elasticsearch:7.4.2
+
+docker start elasticsearch
+
+docker run --name kibana -e ELASTICSEARCH_HOSTS=http://192.168.56.10:9200 -p 5601:5601 \
+-d kibana:7.4.2
+
+docker logs elasticsearch  看日志
+
+chmod -R 777 /mydata/elasticsearch/
+
+
+cd /etc/sysconfig/network-scripts/
+备份原yum源
+mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-base.repo.backup
+新的yum源
+curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.163.com/.help/CentOS7-Base-163.repo
+
+生成缓存
+yum makecache
+
+yum install wget
+yum install -y unzip
+
+docker run -p 80:80 --name nginx -d nginx:1.10
+
+docker container cp nginx:/etc/nginx .
+
+docker run -p 80:80 --name nginx \
+-v /mydata/nginx/html:/usr/share/nginx/html \
+-v /mydata/nginx/logs:/var/log/nginx \
+-v /mydata/nginx/conf:/etc/nginx \
+-d nginx:1.10

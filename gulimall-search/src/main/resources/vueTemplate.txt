@@ -1,0 +1,65 @@
+{
+  "生成vue模板": {
+    "prefix": "vue",
+    "body": [
+      "<template>",
+      "<div></div>",
+      "</template>",
+      "",
+      "<script>",
+      "",
+      "export default {",
+      "components: {},",
+      "props: {},",
+      "data() {",
+      "return {",
+      "",
+      "};",
+      "},",
+      "computed: {},",
+      "watch: {},",
+      "methods: {",
+      "",
+      "},",
+      "created() {",
+      "",
+      "},",
+      "beforeCreate() {},",
+      "beforeMount() {},",
+      "beforeUpdate() {},",
+      "updated() {},",
+      "beforeDestroy() {},",
+      "destroyed() {},",
+      "activated() {},",
+      "}",
+      "</script>",
+      "<style scoped>",
+      "</style>"
+    ],
+    "description": "生成vue模板"
+  },
+  "http-get请求": {
+    "prefix": "httpget",
+    "body": [
+      "this.\\$http({",
+      "url: this.\\$http.adornUrl(''),",
+      "method: 'get',",
+      "params: this.\\$http.adornParams({})",
+      "}).then(({data}) => {",
+      "});"
+    ],
+    "description": "httpGET请求"
+  },
+  "http-post请求": {
+    "prefix": "httppost",
+    "body": [
+      "this.\\$http({",
+      "url: this.\\$http.adornUrl(''),",
+      "method: 'post',",
+      "data: this.\\$http.adornData(data, false)",
+      "}).then(({data}) => {",
+      "});"
+    ],
+    "description": "httpPOST请求"
+  }
+}

@@ -1,3 +1,4 @@
+模板
 PUT product
 {
   "mappings": {
