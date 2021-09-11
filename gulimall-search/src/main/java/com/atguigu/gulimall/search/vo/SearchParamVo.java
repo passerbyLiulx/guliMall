@@ -32,5 +32,7 @@ public class SearchParamVo {
 
     private Integer pageNum = 1; // 页码
 
+    private String queryString;  // 原生的所有查询条件
+
 
 }
