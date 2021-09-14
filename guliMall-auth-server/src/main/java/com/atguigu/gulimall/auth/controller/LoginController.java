@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.validation.Valid;
 import java.util.HashMap;
@@ -67,7 +68,7 @@ public class LoginController {
     }
 
     @PostMapping("/regist")
-    public String regist(@Valid UserRegistVo userRegistVo, BindingResult result, Model model) {
+    public String regist(@Valid UserRegistVo userRegistVo, BindingResult result, RedirectAttributes redirectAttributes) {
         if (result.hasErrors()) {
             /*Map<String, String> errorMap = new HashMap<>();
             List<Map<String, String>> collect = result.getFieldErrors().stream().map(fieldError -> {
@@ -82,9 +83,35 @@ public class LoginController {
                 return fieldError.getDefaultMessage();
             }));*/
             Map<String, String> errorMap = result.getFieldErrors().stream().collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage));
-            model.addAttribute("errors", errorMap);
+            //model.addAttribute("errors", errorMap);
+            redirectAttributes.addFlashAttribute("errors", errorMap);
             // 校验出错
-            return "forward:/reg.html";
+            return "redirect:http://auth.gulimall.com/reg.html";
+        }
+        // 校验验证码
+        String code = stringRedisTemplate.opsForValue().get(AuthServerConstant.SMS_CODE_CACHE_PREFIX + userRegistVo.getPhone());
+        if (StringUtils.isNotBlank(code)) {
+            if (code.equals(userRegistVo.getCode())) {
+                // 删除验证码
+                stringRedisTemplate.delete(AuthServerConstant.SMS_CODE_CACHE_PREFIX + userRegistVo.getPhone());
+                //
+            } else {
+                Map<String, String> errorMap = new HashMap<>();
+                errorMap.put("code", "验证码错误");
+                redirectAttributes.addFlashAttribute("errors", errorMap);
+                // 校验出错
+                return "redirect:http://auth.gulimall.com/reg.html";
+            }
+        } else {
+            Map<String, String> errorMap = new HashMap<>();
+            errorMap.put("code", "验证码错误");
+            redirectAttributes.addFlashAttribute("errors", errorMap);
+            // 校验出错
+            return "redirect:http://auth.gulimall.com/reg.html";
+        }
+        if () {
+
+
         }
         return "redirect:/login.html";
     }
