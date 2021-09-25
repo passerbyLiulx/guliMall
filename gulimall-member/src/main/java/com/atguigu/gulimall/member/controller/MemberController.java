@@ -103,7 +103,7 @@ public class MemberController {
      */
     @RequestMapping("/delete")
     //@RequiresPermissions("member:member:delete")
-    public R delete(@RequestBody Long[] ids){
+    public R delete(@RequestBody Long[] ids) {
 		memberService.removeByIds(Arrays.asList(ids));
 
         return R.ok();
