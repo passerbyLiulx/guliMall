@@ -1,8 +1,10 @@
 package com.atguigu.gulimall.auth.controller;
 
+import com.alibaba.fastjson.TypeReference;
 import com.atguigu.common.constant.AuthServerConstant;
 import com.atguigu.common.exception.BizCodeEnume;
 import com.atguigu.common.utils.R;
+import com.atguigu.gulimall.auth.feign.MemberFeignService;
 import com.atguigu.gulimall.auth.feign.ThirdPartFeignService;
 import com.atguigu.gulimall.auth.vo.UserRegistVo;
 import org.apache.commons.lang.StringUtils;
@@ -36,6 +38,9 @@ public class LoginController {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    private MemberFeignService memberFeignService;
+
     /*@GetMapping("/login.html")
     public String loginPage() {
         return "login";
@@ -61,8 +66,9 @@ public class LoginController {
                 return R.error(BizCodeEnume.SMS_CODE_EXCEPTION.getCode(), BizCodeEnume.SMS_CODE_EXCEPTION.getMsg());
             }
         }
-        String code = UUID.randomUUID().toString().replace("-", "").substring(0, 5) + "_" + System.currentTimeMillis();
-        stringRedisTemplate.opsForValue().set(AuthServerConstant.SMS_CODE_CACHE_PREFIX + phone, code, 120, TimeUnit.SECONDS);
+        String code = UUID.randomUUID().toString().replace("-", "").substring(0, 5);
+        String codeSpell = code + "_" + System.currentTimeMillis();
+        stringRedisTemplate.opsForValue().set(AuthServerConstant.SMS_CODE_CACHE_PREFIX + phone, codeSpell, 120, TimeUnit.SECONDS);
         thirdPartFeignService.sendCode(phone, code);
         return R.ok();
     }
@@ -89,12 +95,22 @@ public class LoginController {
             return "redirect:http://auth.gulimall.com/reg.html";
         }
         // 校验验证码
-        String code = stringRedisTemplate.opsForValue().get(AuthServerConstant.SMS_CODE_CACHE_PREFIX + userRegistVo.getPhone());
-        if (StringUtils.isNotBlank(code)) {
-            if (code.equals(userRegistVo.getCode())) {
+        String code = userRegistVo.getCode();
+        String s = stringRedisTemplate.opsForValue().get(AuthServerConstant.SMS_CODE_CACHE_PREFIX + userRegistVo.getPhone());
+        if (StringUtils.isNotBlank(s)) {
+            if (code.equals(s.split("_")[0])) {
                 // 删除验证码
                 stringRedisTemplate.delete(AuthServerConstant.SMS_CODE_CACHE_PREFIX + userRegistVo.getPhone());
-                //
+                // 验证通过
+                R r = memberFeignService.regist(userRegistVo);
+                if (r.getCode() == 0) {
+                    return "redirect:/login.html";
+                } else {
+                    Map<String, String> errorMap = new HashMap<>();
+                    errorMap.put("msg", r.getData(new TypeReference<String>(){}));
+                    redirectAttributes.addFlashAttribute("errors", errorMap);
+                    return "redirect:http://auth.gulimall.com/reg.html";
+                }
             } else {
                 Map<String, String> errorMap = new HashMap<>();
                 errorMap.put("code", "验证码错误");
@@ -109,10 +125,5 @@ public class LoginController {
             // 校验出错
             return "redirect:http://auth.gulimall.com/reg.html";
         }
-        if () {
-
-
-        }
-        return "redirect:/login.html";
     }
 }
