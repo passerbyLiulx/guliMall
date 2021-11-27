@@ -6,6 +6,7 @@ import com.atguigu.common.exception.BizCodeEnume;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.auth.feign.MemberFeignService;
 import com.atguigu.gulimall.auth.feign.ThirdPartFeignService;
+import com.atguigu.gulimall.auth.vo.UserLoginVo;
 import com.atguigu.gulimall.auth.vo.UserRegistVo;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,6 +125,19 @@ public class LoginController {
             redirectAttributes.addFlashAttribute("errors", errorMap);
             // 校验出错
             return "redirect:http://auth.gulimall.com/reg.html";
+        }
+    }
+
+    @PostMapping("/login")
+    public String login(UserLoginVo vo, RedirectAttributes redirectAttributes) {
+        R login = memberFeignService.login(vo);
+        if (login.getCode() == 0) {
+            return "redirect:http://gulimall.com";
+        } else {
+            Map<String, String> errors = new HashMap<>();
+            errors.put("msg", login.getData("msg", new TypeReference<String>(){}));
+            redirectAttributes.addAttribute("errors", errors);
+            return "redirect:http://auth.gulimall.com/login.html";
         }
     }
 }
