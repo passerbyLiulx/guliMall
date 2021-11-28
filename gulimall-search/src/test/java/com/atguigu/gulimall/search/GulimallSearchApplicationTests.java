@@ -63,6 +63,7 @@ public class GulimallSearchApplicationTests {
 
     /**
      * 查询es
+     *
      * @throws IOException
      */
     @Test
@@ -99,7 +100,7 @@ public class GulimallSearchApplicationTests {
             String sourceAsString = hit.getSourceAsString();
             Accout accout = JSON.parseObject(sourceAsString, Accout.class);
             System.out.println(accout);
-        }   
+        }
         Aggregations aggregations = searchResponse.getAggregations();
         for (Aggregation aggregation : aggregations.asList()) {
 

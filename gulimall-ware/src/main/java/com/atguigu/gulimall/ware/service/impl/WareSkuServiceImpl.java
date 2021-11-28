@@ -32,8 +32,6 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuDao, WareSkuEntity> i
     private ProductFeignService productFeignService;
 
 
-
-
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
         /**
@@ -42,13 +40,13 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuDao, WareSkuEntity> i
          */
         QueryWrapper<WareSkuEntity> queryWrapper = new QueryWrapper<>();
         String skuId = (String) params.get("skuId");
-        if(!StringUtils.isEmpty(skuId)){
-            queryWrapper.eq("sku_id",skuId);
+        if (!StringUtils.isEmpty(skuId)) {
+            queryWrapper.eq("sku_id", skuId);
         }
 
         String wareId = (String) params.get("wareId");
-        if(!StringUtils.isEmpty(wareId)){
-            queryWrapper.eq("ware_id",wareId);
+        if (!StringUtils.isEmpty(wareId)) {
+            queryWrapper.eq("ware_id", wareId);
         }
 
 
@@ -71,11 +69,11 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuDao, WareSkuEntity> i
             wareSkuEntity.setStockLocked(0);
             try {
                 R info = productFeignService.info(skuId);
-                Map<String, Object> data = (Map<String, Object>)info.get("skuInfo");
+                Map<String, Object> data = (Map<String, Object>) info.get("skuInfo");
                 if (info.getCode() == 0) {
                     wareSkuEntity.setSkuName(data.get("skuName").toString());
                 }
-            } catch(Exception e) {
+            } catch (Exception e) {
 
             }
 

@@ -1,6 +1,6 @@
 package com.atguigu.gulimall.member.exception;
 
-public class UserNameExistException extends RuntimeException{
+public class UserNameExistException extends RuntimeException {
 
     public UserNameExistException() {
         super("用户名存在");

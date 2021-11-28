@@ -16,7 +16,7 @@ public class MyThreadConfig {
         return new ThreadPoolExecutor(threadPoolConfigProperties.getCoreSize(),
                 threadPoolConfigProperties.getMaxSize(),
                 threadPoolConfigProperties.getKeepAliveTime(),
-                TimeUnit.SECONDS,new LinkedBlockingDeque<>(100000),
+                TimeUnit.SECONDS, new LinkedBlockingDeque<>(100000),
                 Executors.defaultThreadFactory(),
                 new ThreadPoolExecutor.AbortPolicy());
     }

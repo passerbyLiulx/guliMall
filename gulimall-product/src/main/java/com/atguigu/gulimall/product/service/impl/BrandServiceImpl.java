@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -49,7 +50,7 @@ public class BrandServiceImpl extends ServiceImpl<BrandDao, BrandEntity> impleme
 
     @Override
     public List<BrandEntity> getBrandsByIds(List<Long> brandIds) {
-        return baseMapper.selectList(new QueryWrapper<BrandEntity>() .in("brandId", brandIds));
+        return baseMapper.selectList(new QueryWrapper<BrandEntity>().in("brandId", brandIds));
     }
 
 }

@@ -1,21 +1,20 @@
 package com.atguigu.gulimall.auth.controller;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.atguigu.common.utils.HttpUtils;
 import com.atguigu.common.utils.R;
+import com.atguigu.common.vo.MemberRespVo;
 import com.atguigu.gulimall.auth.feign.MemberFeignService;
-import com.atguigu.gulimall.auth.vo.MemberRespVo;
 import com.atguigu.gulimall.auth.vo.SocialUserVo;
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.sql.PreparedStatement;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +27,7 @@ public class OAuth2Controller {
     private MemberFeignService memberFeignService;
 
     @GetMapping("/oauth2.0/weibo/success")
-    public String weibo(@RequestParam("code") String code) throws Exception {
+    public String weibo(@RequestParam("code") String code, HttpSession session, HttpServletResponse servletResponse) throws Exception {
 
         Map<String, String> map = new HashMap<>();
         map.put("client_id", "2636917288");
@@ -46,8 +45,9 @@ public class OAuth2Controller {
             // 当前用户若是第一次登录，注册
             R oauthLogin = memberFeignService.oauthLogin(socialUserVo);
             if (oauthLogin.getCode() == 0) {
-                oauthLogin.getData("data", new TypeReference<MemberRespVo>(){
+                MemberRespVo data = oauthLogin.getData("data", new TypeReference<MemberRespVo>() {
                 });
+                session.setAttribute("loginUser", data);
                 // 登录成功就跳回首页
                 return "redirect:htp://guliamll.com";
             } else {

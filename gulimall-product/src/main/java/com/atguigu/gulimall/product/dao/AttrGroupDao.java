@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * 属性分组
- * 
+ *
  * @author liulx
  * @email 1191026928@qq.com
  * @date 2020-12-22 19:24:55

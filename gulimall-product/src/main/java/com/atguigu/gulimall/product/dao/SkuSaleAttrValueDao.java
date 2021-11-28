@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * sku销售属性&值
- * 
+ *
  * @author liulx
  * @email 1191026928@qq.com
  * @date 2020-12-22 19:24:55

@@ -19,7 +19,6 @@ import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.R;
 
 
-
 /**
  * 属性分组
  *
@@ -43,19 +42,19 @@ public class AttrGroupController {
     private AttrAttrgroupRelationService relationService;
 
     @PostMapping("/attr/relation")
-    public R addRelation(@RequestBody List<AttrGroupRelationVo> vos){
+    public R addRelation(@RequestBody List<AttrGroupRelationVo> vos) {
 
         relationService.saveBatchInfo(vos);
         return R.ok();
     }
 
     @GetMapping("/{catelogId}/withattr")
-    public R getAttrGroupWithAttrs(@PathVariable("catelogId")Long catelogId){
+    public R getAttrGroupWithAttrs(@PathVariable("catelogId") Long catelogId) {
 
         //1、查出当前分类下的所有属性分组，
         //2、查出每个属性分组的所有属性
-        List<AttrGroupWithAttrsVo> vos =  attrGroupService.getAttrGroupWithAttrsByCatelogId(catelogId);
-        return R.ok().put("data",vos);
+        List<AttrGroupWithAttrsVo> vos = attrGroupService.getAttrGroupWithAttrsByCatelogId(catelogId);
+        return R.ok().put("data", vos);
     }
 
     @GetMapping("/{attrgroupId}/attr/relation")
@@ -70,12 +69,13 @@ public class AttrGroupController {
         PageUtils page = attrService.getNoRelationAttr(params, attrgroupId);
         return R.ok().put("page", page);
     }
+
     /**
      * 列表
      */
     @RequestMapping("/list")
     //@RequiresPermissions("product:attrgroup:list")
-    public R list(@RequestParam Map<String, Object> params){
+    public R list(@RequestParam Map<String, Object> params) {
         PageUtils page = attrGroupService.queryPage(params);
 
         return R.ok().put("page", page);
@@ -86,7 +86,7 @@ public class AttrGroupController {
      */
     @RequestMapping("/list/{catelogId}")
     //@RequiresPermissions("product:attrgroup:list")
-    public R list(@RequestParam Map<String, Object> params, @PathVariable Long catelogId){
+    public R list(@RequestParam Map<String, Object> params, @PathVariable Long catelogId) {
         PageUtils page = attrGroupService.queryPage(params, catelogId);
 
         return R.ok().put("page", page);
@@ -98,11 +98,11 @@ public class AttrGroupController {
      */
     @RequestMapping("/info/{attrGroupId}")
     //@RequiresPermissions("product:attrgroup:info")
-    public R info(@PathVariable("attrGroupId") Long attrGroupId){
-		AttrGroupEntity attrGroup = attrGroupService.getById(attrGroupId);
+    public R info(@PathVariable("attrGroupId") Long attrGroupId) {
+        AttrGroupEntity attrGroup = attrGroupService.getById(attrGroupId);
         Long catelogId = attrGroup.getCatelogId();
         Long[] pathArr = categoryService.findCatelogPath(catelogId);
-		attrGroup.setCatelogPath(pathArr);
+        attrGroup.setCatelogPath(pathArr);
         return R.ok().put("attrGroup", attrGroup);
     }
 
@@ -111,8 +111,8 @@ public class AttrGroupController {
      */
     @RequestMapping("/save")
     //@RequiresPermissions("product:attrgroup:save")
-    public R save(@RequestBody AttrGroupEntity attrGroup){
-		attrGroupService.save(attrGroup);
+    public R save(@RequestBody AttrGroupEntity attrGroup) {
+        attrGroupService.save(attrGroup);
 
         return R.ok();
     }
@@ -122,8 +122,8 @@ public class AttrGroupController {
      */
     @RequestMapping("/update")
     //@RequiresPermissions("product:attrgroup:update")
-    public R update(@RequestBody AttrGroupEntity attrGroup){
-		attrGroupService.updateById(attrGroup);
+    public R update(@RequestBody AttrGroupEntity attrGroup) {
+        attrGroupService.updateById(attrGroup);
 
         return R.ok();
     }
@@ -133,8 +133,8 @@ public class AttrGroupController {
      */
     @RequestMapping("/delete")
     //@RequiresPermissions("product:attrgroup:delete")
-    public R delete(@RequestBody Long[] attrGroupIds){
-		attrGroupService.removeByIds(Arrays.asList(attrGroupIds));
+    public R delete(@RequestBody Long[] attrGroupIds) {
+        attrGroupService.removeByIds(Arrays.asList(attrGroupIds));
 
         return R.ok();
     }
