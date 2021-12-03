@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 import lombok.Data;
+import lombok.ToString;
 
 /**
  * 退货原因
@@ -15,6 +16,7 @@ import lombok.Data;
  * @email 1191026928@qq.com
  * @date 2020-12-23 10:32:09
  */
+@ToString
 @Data
 @TableName("oms_order_return_reason")
 public class OrderReturnReasonEntity implements Serializable {
