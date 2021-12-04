@@ -1,5 +1,11 @@
 package com.atguigu.gulimall.order.service.impl;
 
+import com.atguigu.gulimall.order.entity.OrderEntity;
+import com.atguigu.gulimall.order.entity.OrderReturnReasonEntity;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -14,7 +20,7 @@ import com.atguigu.gulimall.order.dao.OrderItemDao;
 import com.atguigu.gulimall.order.entity.OrderItemEntity;
 import com.atguigu.gulimall.order.service.OrderItemService;
 
-
+@RabbitListener(queues = {"hello-java-queue"})
 @Service("orderItemService")
 public class OrderItemServiceImpl extends ServiceImpl<OrderItemDao, OrderItemEntity> implements OrderItemService {
 
@@ -26,6 +32,30 @@ public class OrderItemServiceImpl extends ServiceImpl<OrderItemDao, OrderItemEnt
         );
 
         return new PageUtils(page);
+    }
+
+    @RabbitListener(queues = {"hello-java-queue"})
+    public void receiveMessage(Message message, OrderReturnReasonEntity content) {
+        // 消息体
+        byte[] body = message.getBody();
+
+        // 消息头属性信息
+        MessageProperties messageProperties = message.getMessageProperties();
+
+        System.out.println("接收到的消息：" + message + "--内容：" + content);
+
+    }
+
+    @RabbitHandler
+    public void receiveMessage2(OrderReturnReasonEntity content) {
+        System.out.println("接收到的--内容：" + content);
+
+    }
+
+    @RabbitHandler
+    public void receiveMessage3(OrderEntity content) {
+        System.out.println("接收到的--内容：" + content);
+
     }
 
 }
