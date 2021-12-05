@@ -133,7 +133,7 @@ public class LoginController {
 
     @GetMapping("/login.html")
     public String loginPage(HttpSession session) {
-        Object logunUser = session.getAttribute("logunUser");
+        Object logunUser = session.getAttribute(AuthServerConstant.LOGIN_USER);
         if(logunUser == null) {
             return "login";
         } else {
@@ -149,7 +149,7 @@ public class LoginController {
         if (login.getCode() == 0) {
             MemberRespVo data = login.getData("data", new TypeReference<MemberRespVo>() {
             });
-            session.setAttribute("logunUser", data);
+            session.setAttribute(AuthServerConstant.LOGIN_USER, data);
             return "redirect:http://gulimall.com";
         } else {
             Map<String, String> errors = new HashMap<>();
