@@ -1,5 +1,6 @@
 package com.atguigu.gulimall.product.app;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -24,6 +25,12 @@ import com.atguigu.common.utils.R;
 public class SkuInfoController {
     @Autowired
     private SkuInfoService skuInfoService;
+
+    @GetMapping("/{skuId}/price")
+    public R getPrice(@PathVariable("skuId") Long skuId) {
+        SkuInfoEntity skuInfoEntity = skuInfoService.getById(skuId);
+        return R.ok().setData(skuInfoEntity.getPrice().toString());
+    }
 
     /**
      * 列表

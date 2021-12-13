@@ -77,6 +77,13 @@
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
         </dependency>
 
+        <!-- seata -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-seata</artifactId>
+        </dependency>
+
+
         <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
