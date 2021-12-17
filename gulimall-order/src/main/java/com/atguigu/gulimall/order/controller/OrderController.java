@@ -25,6 +25,12 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
+    @GetMapping("/status/{orderSn}")
+    public R getOrderStatus(@PathVariable("orderSn") String orderSn) {
+        OrderEntity orderEntity = orderService.getOrderByOrderSn(orderSn);
+        return R.ok().setData(orderEntity);
+    }
+
 
     /**
      * 列表
@@ -34,6 +40,12 @@ public class OrderController {
     public R list(@RequestParam Map<String, Object> params) {
         PageUtils page = orderService.queryPage(params);
 
+        return R.ok().put("page", page);
+    }
+
+    @PostMapping("/listWithItem")
+    public R listWithItem(@RequestBody Map<String, Object> params) {
+        PageUtils page = orderService.queryPageWithItem(params);
         return R.ok().put("page", page);
     }
 

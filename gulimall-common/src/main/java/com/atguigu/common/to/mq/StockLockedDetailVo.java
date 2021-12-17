@@ -1,29 +1,14 @@
-package com.atguigu.gulimall.ware.entity;
+package com.atguigu.common.to.mq;
 
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-
-import java.io.Serializable;
-import java.util.Date;
-
 import lombok.Data;
 
-/**
- * 库存工作单
- *
- * @author liulx
- * @email 1191026928@qq.com
- * @date 2020-12-23 10:38:58
- */
 @Data
-@TableName("wms_ware_order_task_detail")
-public class WareOrderTaskDetailEntity implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class StockLockedDetailVo {
 
     /**
      * id
      */
-    @TableId
     private Long id;
     /**
      * sku_id
@@ -49,5 +34,4 @@ public class WareOrderTaskDetailEntity implements Serializable {
      * 锁定状态
      */
     private Integer lockStatus;
-
 }

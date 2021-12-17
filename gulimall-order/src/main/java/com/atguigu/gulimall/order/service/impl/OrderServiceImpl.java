@@ -9,16 +9,20 @@ import com.atguigu.gulimall.order.OrderStatusEnum;
 import com.atguigu.gulimall.order.constant.OrderConstant;
 import com.atguigu.gulimall.order.dao.OrderItemDao;
 import com.atguigu.gulimall.order.entity.OrderItemEntity;
+import com.atguigu.gulimall.order.entity.PaymentInfoEntity;
 import com.atguigu.gulimall.order.feign.CartFeignService;
 import com.atguigu.gulimall.order.feign.MemberFeignService;
 import com.atguigu.gulimall.order.feign.ProductFeignService;
 import com.atguigu.gulimall.order.feign.WmsFeignService;
 import com.atguigu.gulimall.order.interceptor.LoginUserInterceptor;
 import com.atguigu.gulimall.order.service.OrderItemService;
+import com.atguigu.gulimall.order.service.PaymentInfoService;
 import com.atguigu.gulimall.order.vo.*;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import io.seata.spring.annotation.GlobalTransactional;
 import jdk.nashorn.internal.ir.CallNode;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -52,6 +56,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
     private ThreadLocal<OrderSubmitVo> orderSubmitVoThreadLocal = new ThreadLocal<>();
 
     @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @Autowired
     private OrderDao orderDao;
 
     @Autowired
@@ -59,6 +66,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
 
     @Autowired
     private OrderItemService orderItemService;
+
+    @Autowired
+    private PaymentInfoService paymentInfoService;
 
     @Autowired
     private MemberFeignService memberFeignService;
@@ -169,6 +179,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
                 R r = wmsFeignService.orderLockStock(lockVo);
                 if (r.getCode() == 0) {
                     responseVo.setOrderEntity(orderCreateVo.getOrderEntity());
+                    rabbitTemplate.convertAndSend("order-event-exchange",
+                            "order.create.order",
+                            orderCreateVo.getOrderEntity());
                     return responseVo;
                 } else {
                     // 锁失败
@@ -182,6 +195,71 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
                 return responseVo;
             }
         }
+    }
+
+    @Override
+    public OrderEntity getOrderByOrderSn(String orderSn) {
+        OrderEntity orderEntity = this.getOne(new LambdaQueryWrapper<OrderEntity>().eq(OrderEntity::getOrderSn, orderSn));
+        return orderEntity;
+    }
+
+    @Override
+    public void closeOrder(OrderEntity entity) {
+        OrderEntity orderEntity = this.getById(entity.getId());
+        if (orderEntity.getStatus() == OrderStatusEnum.CREATE_NEW.getCode()) {
+            OrderEntity orderEntityUpdate = new OrderEntity();
+            orderEntityUpdate.setStatus(OrderStatusEnum.CANCLED.getCode());
+            this.updateById(orderEntityUpdate);
+
+            rabbitTemplate.convertAndSend("order-event-exchange",
+                    "order.release.other",
+                    orderEntity);
+        }
+    }
+
+    @Override
+    public PayVo getOrderPay(String orderSn) {
+        PayVo payVo = new PayVo();
+        OrderEntity orderEntity = this.getOrderByOrderSn(orderSn);
+        BigDecimal payAmount = orderEntity.getPayAmount().setScale(2, BigDecimal.ROUND_UP);
+        payVo.setTotal_amount(payAmount.toString());
+        payVo.setOut_trade_no(orderEntity.getOrderSn());
+        payVo.setSubject("商品名称");
+        payVo.setBody("备注");
+        return payVo;
+    }
+
+    @Override
+    public PageUtils queryPageWithItem(Map<String, Object> params) {
+        IPage<OrderEntity> page = this.page(
+                new Query<OrderEntity>().getPage(params),
+                new QueryWrapper<OrderEntity>().lambda()
+                .eq(OrderEntity::getMemberId, "memberId").orderByDesc(OrderEntity::getCreateTime)
+        );
+        List<OrderEntity> orderEntityList = page.getRecords().stream().map(order -> {
+            List<OrderItemEntity> orderItemEntityList = orderItemService.list(new QueryWrapper<OrderItemEntity>().lambda()
+                    .eq(OrderItemEntity::getOrderSn, order.getOrderSn()));
+            order.setItemEntityList(orderItemEntityList);
+            return order;
+        }).collect(Collectors.toList());
+
+        page.setRecords(orderEntityList);
+        return new PageUtils(page);
+
+    }
+
+    @Override
+    public String handlePayResult(PayAsyncVo payAsyVo) {
+        PaymentInfoEntity paymentInfoEntity = new PaymentInfoEntity();
+        paymentInfoEntity.setAlipayTradeNo("aa");
+        paymentInfoEntity.setOrderSn("bb");
+        paymentInfoEntity.setPaymentStatus("cc");
+        paymentInfoEntity.setCreateTime(new Date());
+        paymentInfoService.save(paymentInfoEntity);
+
+        // 修改订单状态
+
+        return "success";
     }
 
     /**
