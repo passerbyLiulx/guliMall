@@ -10,6 +10,6 @@ public class SeckillSkuScheduled {
 
     @Scheduled(cron = "0 0 3 * * ?")
     public void uploadSeckillSkuLatest3Days() {
-        
+         
     }
 }
