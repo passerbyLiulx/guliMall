@@ -22,6 +22,7 @@
         <module>gulimall-third-party</module>
         <module>guliMall-auth-server</module>
         <module>gulimall-cart</module>
+        <module>gulimall-seckill</module>
         <module>renren-fast</module>
         <module>renren-generator</module>
     </modules>
