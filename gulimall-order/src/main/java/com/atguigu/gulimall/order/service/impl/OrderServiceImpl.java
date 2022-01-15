@@ -234,7 +234,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         IPage<OrderEntity> page = this.page(
                 new Query<OrderEntity>().getPage(params),
                 new QueryWrapper<OrderEntity>().lambda()
-                .eq(OrderEntity::getMemberId, "memberId").orderByDesc(OrderEntity::getCreateTime)
+                        .eq(OrderEntity::getMemberId, "memberId").orderByDesc(OrderEntity::getCreateTime)
         );
         List<OrderEntity> orderEntityList = page.getRecords().stream().map(order -> {
             List<OrderItemEntity> orderItemEntityList = orderItemService.list(new QueryWrapper<OrderItemEntity>().lambda()
@@ -262,8 +262,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         return "success";
     }
 
+    @Override
+    public void createSeckillOrder(OrderEntity entity) {
+        // TODO 保存订单信息
+    }
+
     /**
      * 保存订单
+     *
      * @param orderCreateVo
      */
     private void saveOrder(OrderCreateVo orderCreateVo) {
@@ -276,6 +282,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
 
     /**
      * 创建订单
+     *
      * @return
      */
     private OrderCreateVo createOrder() {
@@ -295,6 +302,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
 
     /**
      * 构建订单
+     *
      * @return
      */
     private OrderEntity buildOrder(String orderSn) {
@@ -304,7 +312,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         orderEntity.setMemberId(memberRespVo.getId());
         orderEntity.setOrderSn(orderSn);
         R fare = wmsFeignService.getFare(orderSubmitVo.getAddrId());
-        FareVo fareData = fare.getData(new TypeReference<FareVo>(){});
+        FareVo fareData = fare.getData(new TypeReference<FareVo>() {
+        });
         orderEntity.setFreightAmount(fareData.getFare());
         orderEntity.setReceiverCity(fareData.getAddressVo().getCity());
         orderEntity.setReceiverDetailAddress(fareData.getAddressVo().getDetailAddress());
@@ -335,6 +344,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
 
     /**
      * 构建一个订单项
+     *
      * @param cartItem
      * @return
      */
@@ -377,6 +387,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
 
     /**
      * 验价
+     *
      * @param orderEntity
      * @param orderItemEntityList
      */
