@@ -419,5 +419,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
 
     }
 
+    public static void main(String[] args) {
+        Integer aa = 0;
+        Thread ThreadOne = new Thread();
+        ThreadOne.start();
+    }
 
 }

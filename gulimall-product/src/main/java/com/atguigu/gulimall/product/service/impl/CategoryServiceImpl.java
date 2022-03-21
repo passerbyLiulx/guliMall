@@ -44,6 +44,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
+    private RedisTemplate redisTemplate;
+
+    @Autowired
     private RedissonClient redissonClient;
 
     @Override
